@@ -10,7 +10,7 @@ WiFiEspClient client;
 dht DHT;
 // Declare and initialise global arrays for WiFi settings
 const char ssid[] = "ASUS";
-const char pass[] = "rXq5P12r";
+const char pass[] = "*********";
 const char server[] = "primat.se";
 const String hostname = "primat.se";
 const String uri = "/services/data/mamati@sti.se-mamati.json";
@@ -27,8 +27,13 @@ void setup()
 {
     // Initialize serial for debugging
     Serial.begin(115200);
+
     // Initialize serial for ESP module
     Serial1.begin(9600);
+
+    //Delay to let system boot
+    delay(500);
+
     // Initialize ESP module
     WiFi.init(&Serial1);
 
@@ -41,6 +46,7 @@ void setup()
         while (true)
             ;
     }
+
     // Attempt to connect to WiFi network
     while (status != WL_CONNECTED)
     {
@@ -54,7 +60,6 @@ void setup()
     printWifiStatus();
     Serial.println();
 
-    delay(500); //Delay to let system boot
     Serial.println("DHT11 Humidity & temperature Sensor\n\n");
     delay(1000); //Wait before accessing Sensor
 }
@@ -62,6 +67,8 @@ void setup()
 void loop()
 {
     tempHumid();
+    tempHumid();
+
     sendData();
     delay(2000);
     readData();
@@ -72,24 +79,14 @@ void loop()
         Serial.println();
         Serial.println("Disconnecting from server...");
         client.stop();
-
-        // do nothing forevermore
-        /* while (true)
-            ; */
-        delay(30000);
     }
+
+    delay(30000);
 }
 
 void tempHumid()
 {
     DHT.read11(dht_apin);
-
-    Serial.print("Current humidity = ");
-    Serial.print(DHT.humidity);
-    Serial.print("%  ");
-    Serial.print("temperature = ");
-    Serial.print(DHT.temperature);
-    Serial.println("C  ");
 
     data1 = "&Temperature=" + String(DHT.temperature);
     data2 = "&Humidity=" + String(DHT.humidity);
