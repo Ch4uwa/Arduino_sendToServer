@@ -1,13 +1,16 @@
 #include <SoftwareSerial.h>
 #include "WiFiEsp.h"
+#include "dht.h"
+
+#define dht_apin A0
 
 // Create WiFi module object on GPIO pin 6 (RX) and 7 (TX)
 SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
-
+dht DHT;
 // Declare and initialise global arrays for WiFi settings
-const char ssid[] = "name";
-const char pass[] = "pass";
+const char ssid[] = "ASUS";
+const char pass[] = "rXq5P12r";
 const char server[] = "primat.se";
 const String hostname = "primat.se";
 const String uri = "/services/data/mamati@sti.se-mamati.json";
@@ -50,13 +53,15 @@ void setup()
     Serial.println("You're connected to the network");
     printWifiStatus();
     Serial.println();
+
+    delay(500); //Delay to let system boot
+    Serial.println("DHT11 Humidity & temperature Sensor\n\n");
+    delay(1000); //Wait before accessing Sensor
 }
 
 void loop()
 {
-    data1 = "&Value1=qwerty";
-    data2 = "&Value2=123456";
-
+    tempHumid();
     sendData();
     delay(2000);
     readData();
@@ -69,9 +74,28 @@ void loop()
         client.stop();
 
         // do nothing forevermore
-        while (true)
-            ;
+        /* while (true)
+            ; */
+        delay(30000);
     }
+}
+
+void tempHumid()
+{
+    DHT.read11(dht_apin);
+
+    Serial.print("Current humidity = ");
+    Serial.print(DHT.humidity);
+    Serial.print("%  ");
+    Serial.print("temperature = ");
+    Serial.print(DHT.temperature);
+    Serial.println("C  ");
+
+    data1 = "&Temperature=" + String(DHT.temperature);
+    data2 = "&Humidity=" + String(DHT.humidity);
+
+    delay(5000); //Wait 5 seconds before accessing sensor again.
+                 //Fastest should be once every two seconds.
 }
 
 void readData()
