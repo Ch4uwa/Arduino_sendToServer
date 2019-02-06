@@ -6,8 +6,8 @@ SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
 
 // Declare and initialise global arrays for WiFi settings
-const char ssid[] = "ASUS";
-const char pass[] = "rXq5P12r";
+const char ssid[] = "name";
+const char pass[] = "pass";
 const char server[] = "primat.se";
 const String hostname = "primat.se";
 const String uri = "/services/data/mamati@sti.se-mamati.json";
