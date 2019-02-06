@@ -1,13 +1,20 @@
 #include <SoftwareSerial.h>
 #include "WiFiEsp.h"
 #include "dht.h"
+#include "NewPing.h"
 
 #define dht_apin A0
+#define TRIG_PIN A1
+#define ECHO_PIN A2
+#define MAX_DISTANCE 450
 
 // Create WiFi module object on GPIO pin 6 (RX) and 7 (TX)
 SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
 dht DHT;
+
+NewPing sonar(TRIG_PIN,ECHO_PIN,MAX_DISTANCE);
+
 // Declare and initialise global arrays for WiFi settings
 const char ssid[] = "ASUS";
 const char pass[] = "*********";
@@ -23,17 +30,8 @@ String line;
 // Declare and initialise variable for radio status
 int status = WL_IDLE_STATUS;
 
-void setup()
+void wifiInit()
 {
-    // Initialize serial for debugging
-    Serial.begin(115200);
-
-    // Initialize serial for ESP module
-    Serial1.begin(9600);
-
-    //Delay to let system boot
-    delay(500);
-
     // Initialize ESP module
     WiFi.init(&Serial1);
 
@@ -59,9 +57,20 @@ void setup()
     Serial.println("You're connected to the network");
     printWifiStatus();
     Serial.println();
+}
 
-    Serial.println("DHT11 Humidity & temperature Sensor\n\n");
-    delay(1000); //Wait before accessing Sensor
+void setup()
+{
+    // Initialize serial for debugging
+    Serial.begin(115200);
+
+    // Initialize serial
+    Serial1.begin(9600);
+
+    //Delay to let system boot
+    delay(500);
+
+    
 }
 
 void loop()
@@ -69,7 +78,11 @@ void loop()
     tempHumid();
     tempHumid();
 
-    sendData();
+    Serial.print("Ping: ");
+    Serial.print(readDistance()); // Send ping, get distance in cm and print result (0 = outside set distance range)
+    Serial.println("cm");
+
+    /* sendData();
     delay(2000);
     readData();
 
@@ -81,7 +94,17 @@ void loop()
         client.stop();
     }
 
-    delay(30000);
+    delay(30000); */
+}
+
+int readDistance()
+{
+    delay(50); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+    int cm = sonar.ping_cm();
+    if (cm==0) {
+        cm = MAX_DISTANCE;
+    }
+    return cm;
 }
 
 void tempHumid()
