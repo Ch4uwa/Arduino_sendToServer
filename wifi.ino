@@ -2,17 +2,20 @@
 #include "WiFiEsp.h"
 #include "dht.h"
 #include "NewPing.h"
+#include "Servo.h"
 
 #define dht_apin A0
-#define TRIG_PIN A1
-#define ECHO_PIN A2
-#define MAX_DISTANCE 450
+#define TRIG_PIN 2
+#define ECHO_PIN 3
+#define MAX_DISTANCE 200
+
 
 // Create WiFi module object on GPIO pin 6 (RX) and 7 (TX)
 SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
 dht DHT;
 
+Servo servo_9;
 NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
 
 // Declare and initialise global arrays for WiFi settings
@@ -24,11 +27,75 @@ const String uri = "/services/data/";
 const String senduri = "/services/sendform.aspx?";
 const int port = 80;
 
+String xid = "mamati";
+String xmail = "mamati@sti.se";
+
 String data1;
 String data2;
 String line;
+int distance = 100;
 // Declare and initialise variable for radio status
 int status = WL_IDLE_STATUS;
+
+
+
+void setup()
+{
+    // Initialize serial for debugging
+    Serial.begin(115200);
+
+    // Initialize serial
+    Serial1.begin(9600);
+
+    //Delay to let system boot
+    delay(500);
+
+    servo_9.attach(9);
+    //Initialize wifi and connect
+    //wifiInit();
+
+    servo_9.write(0);
+    distance = readDistance();
+    delay(100);
+    distance = readDistance();
+    delay(100);
+    distance = readDistance();
+    delay(100);
+    distance = readDistance();
+    delay(100);
+}
+
+
+void loop()
+{
+    //tempHumid();
+    
+     
+    for(size_t pos = 0; pos < 180; pos++)
+    {
+        servo_9.write(pos);
+        delay(15);
+        distance = readDistance();
+
+        Serial.println(distance);
+    }
+    delay(5000);
+
+    /* sendData();
+    delay(2000);
+    readData();
+
+    // if the server's disconnected, stop the client
+    if (!client.connected())
+    {
+        Serial.println();
+        Serial.println("Disconnecting from server...");
+        client.stop();
+        Serial.println("Disconnected from server.");
+    }
+
+    delay(120000); */
+}
 
 void wifiInit()
 {
@@ -60,58 +127,15 @@ void wifiInit()
     Serial.println();
 }
 
-void setup()
-{
-    // Initialize serial for debugging
-    Serial.begin(115200);
-
-    // Initialize serial
-    Serial1.begin(9600);
-
-    //Delay to let system boot
-    delay(500);
-
-    //Initialize wifi and connect
-    wifiInit();
-
-    
-    String xid = "mamati";
-    String xmail = "mamati@sti.se";
-}
-
-void loop()
-{
-    tempHumid();
-    tempHumid();
-
-    Serial.print("Ping: ");
-    Serial.print(readDistance()); // Send ping, get distance in cm and print result (0 = outside set distance range)
-    Serial.println("cm");
-
-    /* sendData();
-    delay(2000);
-    readData();
-
-    // if the server's disconnected, stop the client
-    if (!client.connected())
-    {
-        Serial.println();
-        Serial.println("Disconnecting from server...");
-        client.stop();
-        Serial.println("Disconnected from server.");
-    }
-
-    delay(120000); */
-}
-
 int readDistance()
 {
-    delay(50); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+    delay(70); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
     int cm = sonar.ping_cm();
-    if (cm == 0)
+    /* if (cm == 0)
     {
-        cm = MAX_DISTANCE;
-    }
+        cm = 250;
+    } */
+    
     return cm;
 }
 
@@ -121,7 +145,8 @@ void tempHumid()
 
     data1 = "&Temperature=" + String(DHT.temperature);
     data2 = "&Humidity=" + String(DHT.humidity);
-
+    Serial.println(data1);
+    Serial.println(data2);
     delay(5000); //Wait 5 seconds before accessing sensor again.
                  //Fastest should be once every two seconds.
 }
