@@ -13,15 +13,15 @@ SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
 dht DHT;
 
-NewPing sonar(TRIG_PIN,ECHO_PIN,MAX_DISTANCE);
+NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
 
 // Declare and initialise global arrays for WiFi settings
 const char ssid[] = "ASUS";
 const char pass[] = "*********";
 const char server[] = "primat.se";
 const String hostname = "primat.se";
-const String uri = "/services/data/mamati@sti.se-mamati.json";
-const String senduri = "/services/sendform.aspx?xid=mamati&xmail=mamati@sti.se";
+const String uri = "/services/data/";
+const String senduri = "/services/sendform.aspx?";
 const int port = 80;
 
 String data1;
@@ -50,6 +50,7 @@ void wifiInit()
     {
         Serial.print("Attempting to connect to SSID: ");
         Serial.println(ssid);
+
         // Connect to WPA/WPA2 network
         status = WiFi.begin(ssid, pass);
     }
@@ -70,7 +71,12 @@ void setup()
     //Delay to let system boot
     delay(500);
 
+    //Initialize wifi and connect
+    wifiInit();
+
     
+    String xid = "mamati";
+    String xmail = "mamati@sti.se";
 }
 
 void loop()
@@ -92,16 +98,18 @@ void loop()
         Serial.println();
         Serial.println("Disconnecting from server...");
         client.stop();
+        Serial.println("Disconnected from server.");
     }
 
-    delay(30000); */
+    delay(120000); */
 }
 
 int readDistance()
 {
     delay(50); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
     int cm = sonar.ping_cm();
-    if (cm==0) {
+    if (cm == 0)
+    {
         cm = MAX_DISTANCE;
     }
     return cm;
@@ -127,7 +135,13 @@ void readData()
     {
         Serial.println("Connected to server");
         // Make a HTTP request
-        client.println("GET " + uri + " HTTP/1.1");
+        client.println("GET ");
+        client.print(uri);
+        client.print(xmail);
+        client.print("-");
+        client.print(xid);
+        client.print(".json");
+        client.print("HTTP/1.1");
         client.println("Host: " + hostname);
         client.println("Connection: close");
         client.println();
@@ -146,7 +160,7 @@ void readData()
     }
 }
 
-void sendData()
+String sendData()
 {
     Serial.println();
     Serial.println("Sending to server...");
@@ -155,8 +169,15 @@ void sendData()
     if (client.connect(server, port))
     {
         Serial.println("Connected to server");
-
-        client.println("GET " + senduri + data1 + data2 + " HTTP/1.1");
+        
+        client.println("GET ");
+        client.print(senduri);
+        client.print(xid);
+        client.print("&");
+        client.print(xmail);
+        client.print(data1);
+        client.print(data2);
+        client.print("HTTP/1.1");
         client.println("Host: " + hostname);
         client.println("Connection: close");
         client.println();
@@ -170,7 +191,7 @@ void sendData()
     {
         line = client.readString();
     }
-    Serial.println(line);
+    return line;
 }
 
 void printWifiStatus()
