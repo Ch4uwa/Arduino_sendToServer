@@ -19,7 +19,7 @@ NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
 
 // Declare and initialise global arrays for WiFi settings
 const char ssid[] = "AndroidAP";
-const char pass[] = "rXq5P12r";
+const char pass[] = "xxx";
 const char server[] = "primat.se";
 const String hostname = "primat.se";
 const String uri = "/services/data/mamati@sti.se-mamati.json";
