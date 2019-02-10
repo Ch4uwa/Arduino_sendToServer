@@ -1,17 +1,32 @@
 #include <SoftwareSerial.h>
 #include "WiFiEsp.h"
 #include "dht.h"
-
+#include <RtcDS3231.h>
+#include "U8glib.h"
+#include <Wire.h>
 
 #define dht_apin A0
 
+// Create module object on GPIO pin
+// wifi 6 (RX) and 7 (TX)
 
-
-// Create WiFi module object on GPIO pin 6 (RX) and 7 (TX)
 SoftwareSerial Serial1(6, 7);
+
 WiFiEspClient client;
 dht DHT;
+U8GLIB_SSD1306_128X64 oled(U8G_I2C_OPT_NONE);
 
+RtcDS3231<TwoWire> rtcModule(Wire);
+
+byte hours;
+byte minutes;
+byte seconds;
+
+short year;
+byte month;
+byte day;
+
+byte WeekDay;
 
 // Declare and initialise global arrays for WiFi settings
 const char ssid[] = "MartinAP";
@@ -22,10 +37,8 @@ const String uri = "/services/data/mamati@sti.se-mamati.csv";
 const String senduri = "/services/sendform.aspx?xdata=mamati@sti.se|mamati|";
 const int port = 80;
 
-
 String dataT;
 String dataH;
-
 String line;
 
 // Declare and initialise variable for radio status
@@ -35,37 +48,90 @@ void setup()
 {
     // Initialize serial for debugging
     Serial.begin(115200);
-
     // Initialize serial
     Serial1.begin(9600);
 
+    // Enable I2C communication
+    
+
+    // Update RTC module time to compilation time
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    rtcModule.SetDateTime(compiled);
+ 
     //Initialize wifi and connect
-    wifiInit();
+    //wifiInit();
+    tempHumid();
+    updateTime();
+    updateDate();
 }
 
 void loop()
 {
 
-    tempHumid();
-    delay(1000);
-    sendData();
+    oled.firstPage();
+    do
+    {
+        draw();
+    } while (oled.nextPage());
+    delay(20);
+    updateTime();
+    if (!seconds%10) {
+        tempHumid();
+    }
+    if (minutes==00) {
+        updateDate();
+    }
     
     
-    //delay(500);
+    
     //sendData();
-    delay(1000);
-    readData();
+    //delay(1000);
+    //readData();
 
     // if the server's disconnected, stop the client
-    if (!client.connected())
-    {
-        Serial.println();
-        Serial.println("Disconnecting from server...");
-        client.stop();
-        Serial.println("Disconnected from server.");
-    }
+    
 
-    delay(300000);
+    
+}
+
+void updateTime()
+{
+    RtcDateTime now = rtcModule.GetDateTime();
+    hours = now.Hour();
+    minutes = now.Minute();
+    seconds = now.Second();
+}
+
+void updateDate()
+{
+    RtcDateTime now = rtcModule.GetDateTime();
+    year = now.Year();
+    month = now.Month();
+    day = now.Day();
+    WeekDay = now.DayOfWeek();
+}
+
+void draw()
+{
+    oled.setFont(u8g_font_timB10);
+    oled.setFontPosTop();
+    int h = oled.getFontAscent() - oled.getFontDescent();
+    
+    oled.setPrintPos(0, h*3);
+    oled.print(dataT);
+    oled.setPrintPos(0, h*4);
+    oled.print(dataH + "\%");
+
+    char timeString[10];
+    sprintf(timeString, "%02u:%02u:%02u", hours, minutes, seconds);
+    int w = (oled.getWidth() - oled.getStrWidth(timeString))/2;
+    oled.setPrintPos(w, 0);
+    oled.print(timeString);
+    char dateString[12];
+    sprintf(dateString, "%04u/%02u/%02u", year, month, day);
+    w = (oled.getWidth() - oled.getStrWidth(dateString))/2;
+    oled.setPrintPos(w, h);
+    oled.print(dateString);
 }
 
 void wifiInit()
@@ -98,25 +164,13 @@ void wifiInit()
     Serial.println();
 }
 
-int readDistance()
-{
-    delay(70); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
-    int cm = sonar.ping_cm();
-    if (cm == 0)
-    {
-        cm = 250;
-    }
-
-    return cm;
-}
-
 void tempHumid()
 {
     DHT.read11(dht_apin);
-    dataT = "Temperature:" + String(DHT.temperature);
-    dataH = "Humidity:" + String(DHT.humidity);
-
-    delay(5000); //Wait 5 seconds before accessing sensor again.
+    dataT = "Temp: " + String(DHT.temperature);
+    dataH = "Humid: " + String(DHT.humidity);
+    
+    //delay(5000); //Wait 5 seconds before accessing sensor again.
                  //Fastest should be once every two seconds.
 }
 
@@ -162,7 +216,6 @@ void sendData()
         client.println("Connection: close");
         client.println();
     }
-    
 
     while (client.available() == 0)
     {
@@ -173,6 +226,11 @@ void sendData()
         line = client.readString();
     }
     Serial.println(line);
+    
+    if (!client.connected())
+    {
+        client.stop();
+    }
 }
 
 void printWifiStatus()
