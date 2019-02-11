@@ -15,13 +15,11 @@ SoftwareSerial Serial1(6, 7);
 WiFiEspClient client;
 dht DHT;
 U8GLIB_SSD1306_128X64 oled(U8G_I2C_OPT_NONE);
-
 RtcDS3231<TwoWire> rtcModule(Wire);
 
 byte hours;
 byte minutes;
 byte seconds;
-
 short year;
 byte month;
 byte day;
